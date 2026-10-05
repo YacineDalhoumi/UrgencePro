@@ -1,0 +1,144 @@
+/* UrgencePro — prototype de démonstration
+   Mise en page : barre latérale « encre » + espace de travail clair, accent orange signalisation (gilet haute visibilité).
+   Toutes les couleurs sont des triplets RGB consommés par Tailwind via rgb(var(--x) / alpha). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 243 244 247;
+  --surface: 255 255 255;
+  --sunken: 234 236 241;
+  --border: 219 223 230;
+  --fg: 21 26 36;
+  --muted: 92 101 116;
+  --accent: 194 65 12;
+  --accent-fg: 255 255 255;
+  --accent-soft: 255 236 223;
+  --ink: 23 30 44;
+  --ink-fg: 226 231 239;
+  --ok: 21 128 61;
+  --ok-soft: 220 244 228;
+  --warn: 161 98 7;
+  --warn-soft: 254 243 199;
+  --bad: 196 30 30;
+  --bad-soft: 254 226 226;
+  --info: 29 78 216;
+  --info-soft: 221 234 254;
+  --ai: 109 40 217;
+  --ai-soft: 238 233 254;
+  /* Séries de graphiques */
+  --c1: 194 65 12;
+  --c2: 29 78 216;
+  --c3: 13 148 136;
+  --c4: 161 98 7;
+  --c5: 109 40 217;
+  --c6: 100 116 139;
+  /* Carte */
+  --map-land: 236 238 232;
+  --map-road: 255 255 255;
+  --map-water: 191 214 236;
+  --map-park: 210 230 205;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: 13 16 22;
+    --surface: 21 26 34;
+    --sunken: 9 12 17;
+    --border: 45 52 64;
+    --fg: 231 234 239;
+    --muted: 150 158 172;
+    --accent: 251 136 76;
+    --accent-fg: 28 12 4;
+    --accent-soft: 66 33 16;
+    --ink: 9 12 17;
+    --ink-fg: 218 224 232;
+    --ok: 74 222 128;
+    --ok-soft: 18 50 31;
+    --warn: 250 204 21;
+    --warn-soft: 58 47 10;
+    --bad: 248 113 113;
+    --bad-soft: 69 22 22;
+    --info: 96 165 250;
+    --info-soft: 22 38 70;
+    --ai: 167 139 250;
+    --ai-soft: 44 31 80;
+    --c1: 251 136 76;
+    --c2: 96 165 250;
+    --c3: 45 212 191;
+    --c4: 250 204 21;
+    --c5: 167 139 250;
+    --c6: 148 163 184;
+    --map-land: 28 33 42;
+    --map-road: 52 60 74;
+    --map-water: 30 52 80;
+    --map-park: 28 48 36;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: 13 16 22;
+  --surface: 21 26 34;
+  --sunken: 9 12 17;
+  --border: 45 52 64;
+  --fg: 231 234 239;
+  --muted: 150 158 172;
+  --accent: 251 136 76;
+  --accent-fg: 28 12 4;
+  --accent-soft: 66 33 16;
+  --ink: 9 12 17;
+  --ink-fg: 218 224 232;
+  --ok: 74 222 128;
+  --ok-soft: 18 50 31;
+  --warn: 250 204 21;
+  --warn-soft: 58 47 10;
+  --bad: 248 113 113;
+  --bad-soft: 69 22 22;
+  --info: 96 165 250;
+  --info-soft: 22 38 70;
+  --ai: 167 139 250;
+  --ai-soft: 44 31 80;
+  --c1: 251 136 76;
+  --c2: 96 165 250;
+  --c3: 45 212 191;
+  --c4: 250 204 21;
+  --c5: 167 139 250;
+  --c6: 148 163 184;
+  --map-land: 28 33 42;
+  --map-road: 52 60 74;
+  --map-water: 30 52 80;
+  --map-park: 28 48 36;
+  color-scheme: dark;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { text-wrap: balance; }
+.tnum { font-variant-numeric: tabular-nums; }
+.label-caps { text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; font-weight: 600; }
+:focus-visible { outline: 2px solid rgb(var(--accent)); outline-offset: 2px; }
+::selection { background: rgb(var(--accent) / 0.25); }
+
+/* Barres de défilement discrètes */
+.scroll-thin { scrollbar-width: thin; scrollbar-color: rgb(var(--border)) transparent; }
+
+/* Rayures « chantier » pour l'urgence absolue */
+.hazard {
+  background-image: repeating-linear-gradient(135deg, rgb(var(--accent)) 0 6px, transparent 6px 12px);
+}
+
+@keyframes pulse-ring { 0% { transform: scale(0.6); opacity: .7 } 100% { transform: scale(2.2); opacity: 0 } }
+.pulse-ring { animation: pulse-ring 1.8s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes ring { 0%,100% { transform: rotate(0) } 20% { transform: rotate(-14deg) } 40% { transform: rotate(12deg) } 60% { transform: rotate(-8deg) } 80% { transform: rotate(6deg) } }
+.ringing { animation: ring 1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring, .ringing { animation: none; }
+  * { transition-duration: 0s !important; }
+}
