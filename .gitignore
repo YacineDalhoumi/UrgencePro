@@ -1,0 +1,5 @@
+# Secrets : ne jamais versionner les fichiers .env (le modèle .env.example reste versionné)
+.env*
+!.env.example
+node_modules
+.DS_Store

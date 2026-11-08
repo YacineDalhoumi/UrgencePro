@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* UrgencePro — jetons de couleur (thème clair par défaut, sombre selon le système).
+   Mêmes choix que le prototype : encre bleu nuit + orange signalisation. */
+:root {
+  --bg: #f3f4f7;
+  --surface: #ffffff;
+  --sunken: #eaecf1;
+  --border: #dbdfe6;
+  --fg: #151a24;
+  --muted: #5c6574;
+  --accent: #c2410c;
+  --accent-fg: #ffffff;
+  --accent-soft: #ffecdf;
+  --ink: #171e2c;
+  --ink-fg: #e2e7ef;
+  --ok: #15803d;
+  --ok-soft: #dcf4e4;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+  --bad: #c41e1e;
+  --bad-soft: #fee2e2;
+  --info: #1d4ed8;
+  --info-soft: #dde9fe;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1016;
+    --surface: #151a22;
+    --sunken: #090c11;
+    --border: #2d3440;
+    --fg: #e7eaef;
+    --muted: #969eac;
+    --accent: #fb884c;
+    --accent-fg: #1c0c04;
+    --accent-soft: #42210f;
+    --ink: #090c11;
+    --ink-fg: #dae0e8;
+    --ok: #4ade80;
+    --ok-soft: #12321f;
+    --warn: #fbbf24;
+    --warn-soft: #3a2f0a;
+    --bad: #f87171;
+    --bad-soft: #451616;
+    --info: #60a5fa;
+    --info-soft: #162646;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
+  --color-ink-fg: var(--ink-fg);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { text-wrap: balance; }
+.tnum { font-variant-numeric: tabular-nums; }
+.label-caps { text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; font-weight: 600; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@keyframes indeterminate { 0% { transform: translateX(-100%) } 100% { transform: translateX(250%) } }
+.progress-indeterminate { animation: indeterminate 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .progress-indeterminate { animation: none; } }
