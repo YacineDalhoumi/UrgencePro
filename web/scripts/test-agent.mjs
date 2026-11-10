@@ -52,7 +52,8 @@ if (process.env.AGENT_SUPABASE_URL && process.env.AGENT_SUPABASE_SERVICE_KEY) {
   try {
     const key = process.env.AGENT_SUPABASE_SERVICE_KEY;
     const r = await fetch(`${process.env.AGENT_SUPABASE_URL}/rest/v1/demandes?select=id,reference,created_at&order=created_at.desc&limit=1`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      // Clé récente (sb_secret_…) : en-tête apikey seul ; ancienne clé JWT : apikey + Bearer
+      headers: key.startsWith("sb_") ? { apikey: key } : { apikey: key, Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(10_000),
     });
     const body = await r.json().catch(() => null);

@@ -29,7 +29,21 @@ let client: SupabaseClient | null = null;
 function agentDb(): SupabaseClient {
   if (!client) {
     const { url, serviceKey } = agentDbConfig();
-    client = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    // Les clés secrètes récentes (sb_secret_…) s'envoient uniquement dans l'en-tête « apikey »,
+    // jamais comme jeton Bearer : on retire l'en-tête Authorization que le client ajoute par défaut.
+    const nouvelleCle = serviceKey.startsWith("sb_");
+    client = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: nouvelleCle
+        ? {
+            fetch: (input, init) => {
+              const headers = new Headers(init?.headers);
+              if (headers.get("Authorization") === `Bearer ${serviceKey}`) headers.delete("Authorization");
+              return fetch(input, { ...init, headers });
+            },
+          }
+        : undefined,
+    });
   }
   return client;
 }

@@ -11,8 +11,12 @@ const eur = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", c
 const pct = (n: number) => `${String(n).replace(".", ",")} %`;
 const dateFr = (iso: string) => {
   const d = new Date(`${iso}T12:00:00`);
-  return isNaN(d.getTime()) ? iso : d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  if (isNaN(d.getTime())) return iso;
+  const s = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  return s.charAt(0).toUpperCase() + s.slice(1); // « Mercredi 11 novembre »
 };
+/** « 09:00 » → « 9 h 00 » */
+const heure = (h?: string) => (h ? h.replace(/^0(\d)/, "$1").replace(":", " h ") : "");
 
 export interface ResultatProps {
   success: boolean;
@@ -333,8 +337,8 @@ function CreneauLigne({ c }: { c: Creneau | string }) {
   if (typeof c === "string") return <span>{c}</span>;
   return (
     <span>
-      <b className="capitalize">{c.date ? dateFr(c.date) : "Date à définir"}</b>
-      {c.heure_debut && ` · ${c.heure_debut.replace(":", " h ")}${c.heure_fin ? ` – ${c.heure_fin.replace(":", " h ")}` : ""}`}
+      <b>{c.date ? dateFr(c.date) : "Date à définir"}</b>
+      {c.heure_debut && ` · ${heure(c.heure_debut)}${c.heure_fin ? ` – ${heure(c.heure_fin)}` : ""}`}
       {c.technicien_nom && <span className="text-muted"> · {c.technicien_nom}</span>}
     </span>
   );
@@ -352,10 +356,10 @@ function Planning({ r, actions }: { r: unknown; actions: Actions }) {
         <div className="label-caps text-muted">{ACTION_PLANNING[d.action] ?? d.action}</div>
         {c && (c.date || c.heure_debut) ? (
           <div className="mt-1">
-            <div className="font-display text-xl font-extrabold capitalize">{c.date ? dateFr(c.date) : "—"}</div>
+            <div className="font-display text-xl font-extrabold">{c.date ? dateFr(c.date) : "—"}</div>
             <div className="text-lg font-semibold tnum">
-              {c.heure_debut?.replace(":", " h ")}
-              {c.heure_fin && ` – ${c.heure_fin.replace(":", " h ")}`}
+              {heure(c.heure_debut)}
+              {c.heure_fin && ` – ${heure(c.heure_fin)}`}
             </div>
             {c.technicien_nom && <p className="mt-1 text-sm text-muted">Technicien : {c.technicien_nom}</p>}
           </div>
