@@ -11,6 +11,7 @@ import { testerBase } from "@/lib/agent/db";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ ok: false, message: "Non connecté." }, { status: 401 });
+  if (!user.artisanId) return NextResponse.json({ ok: false, message: "Compte non activé." }, { status: 403 });
 
   const checks: { nom: string; ok: boolean; message: string }[] = [];
   if (mockMode()) checks.push({ nom: "Mode", ok: true, message: "Mode simulé actif (AGENT_MOCK=1) : n8n n'est pas appelé par les demandes." });
@@ -52,7 +53,7 @@ export async function GET() {
   checks.push({
     nom: "Compte",
     ok: true,
-    message: user.artisanIsDefault ? `Aucun artisan rattaché au compte : artisan de démonstration ${user.artisanId}.` : `Artisan rattaché : ${user.artisanId}.`,
+    message: `Entreprise rattachée au compte : ${user.artisanId}.`,
   });
 
   return NextResponse.json({ ok: checks.every((c) => c.ok), checks });

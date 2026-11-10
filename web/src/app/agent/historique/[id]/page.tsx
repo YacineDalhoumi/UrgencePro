@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requireArtisan } from "@/lib/auth";
 import { lireDemande } from "@/lib/agent/db";
 import { Alert, Card, CardTitle } from "@/components/ui";
 import { ResultatAgent } from "@/components/agent/Resultat";
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Demande" };
 
 export default async function PageDemande({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await requireUser(`/agent/historique/${id}`);
+  const user = await requireArtisan(`/agent/historique/${id}`);
   let d: Awaited<ReturnType<typeof lireDemande>>;
   try {
     d = await lireDemande(id, user.artisanId);

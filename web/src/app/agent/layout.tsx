@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { LogOut } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requireArtisan } from "@/lib/auth";
 import { seDeconnecter } from "@/app/connexion/actions";
 import { NavLiens } from "./nav";
 
 export default async function AgentLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
+  const user = await requireArtisan();
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-30 bg-ink text-ink-fg" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>

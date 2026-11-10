@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { requireUser } from "@/lib/auth";
+import { requireArtisan } from "@/lib/auth";
 import { listerDemandes, PAGE_TAILLE } from "@/lib/agent/db";
 import { TYPE_LABEL, TYPES_DEMANDE, type TypeDemande } from "@/lib/agent/types";
 import { Alert, Badge, Card, cn } from "@/components/ui";
@@ -31,7 +31,7 @@ function Pastille({ href, actif, children }: { href: string; actif: boolean; chi
 }
 
 export default async function PageHistorique({ searchParams }: { searchParams: Promise<Params> }) {
-  const user = await requireUser("/agent/historique");
+  const user = await requireArtisan("/agent/historique");
   const p = await searchParams;
   const page = Math.max(1, Number(p.page) || 1);
 

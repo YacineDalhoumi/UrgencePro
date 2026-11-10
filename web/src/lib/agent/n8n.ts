@@ -83,6 +83,7 @@ export async function appelerAgent(payload: PayloadN8n): Promise<ResultatAppel> 
 /** Code HTTP renvoyé par notre route pour chaque erreur. */
 export const HTTP_STATUS: Record<CodeErreur, number> = {
   non_connecte: 401,
+  compte_non_active: 403,
   validation: 400,
   limite: 429,
   config: 500,

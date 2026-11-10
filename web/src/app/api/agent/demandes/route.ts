@@ -19,6 +19,7 @@ const erreur = (code: CodeErreur, message: string, extra?: { details?: Record<st
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return erreur("non_connecte", "Votre session a expiré. Reconnectez-vous.");
+  if (!user.artisanId) return erreur("compte_non_active", "Ce compte n'est rattaché à aucune entreprise : demandez à l'administrateur de l'activer.");
 
   const limite = verifierLimite(user.id, rateLimitPerMinute());
   if (!limite.autorise) {

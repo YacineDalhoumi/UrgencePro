@@ -50,6 +50,7 @@ Pour tester les erreurs en mode simulé, ajoutez un mot-clé dans le message : `
 | `/connexion` | Connexion email + mot de passe, lien « mot de passe oublié » |
 | `/auth/confirm` | Validation des liens reçus par email (invitation, réinitialisation) |
 | `/compte/mot-de-passe` | Choix d’un mot de passe |
+| `/compte/non-active` | Compte connecté mais rattaché à aucune entreprise |
 | `/agent/nouvelle` | Nouvelle demande + résultat de l’agent |
 | `/agent/historique` | Historique (filtres type / statut, pagination) |
 | `/agent/historique/[id]` | Fiche détaillée d’une demande |
@@ -92,9 +93,11 @@ ligne ajoutée dans `demandes`. La page **Diagnostic** de l’application fait l
    par l’administrateur (Authentication → Users → Invite user).
 3. **Authentication → URL Configuration** : *Site URL* = l’URL Vercel ; ajoutez `http://localhost:3000/**` et
    `https://<votre-domaine>/**` aux *Redirect URLs*.
-4. **Authentication → Emails** : dans les modèles *Invite user* et *Reset password*, utilisez un lien de la forme
+4. **Authentication → Emails** : les modèles par défaut fonctionnent (la route `/auth/confirm` accepte le paramètre `code`).
+   Pour des liens plus robustes (ouverts sur un autre appareil), utilisez
    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (`type=recovery` pour la réinitialisation).
-5. Rattachez chaque compte à son artisan (sinon `AGENT_ARTISAN_ID` est utilisé) — SQL Editor du projet de l’application :
+5. Rattachez chaque compte à son artisan — **obligatoire** : un compte sans `artisan_id` voit la page « Compte non activé »
+   et l’API lui répond 403. Une inscription libre ne donne donc accès à rien. SQL Editor du projet de l’application :
 
    ```sql
    update auth.users

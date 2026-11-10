@@ -22,7 +22,7 @@ const vide = { nom: "", telephone: "", email: "", adresse: "" };
 const interventionVide = { date: "", technicien: "", constat: "", travaux: "", materiel: "" };
 const lignes = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 
-export function NouvelleDemandeForm({ artisanId, artisanIsDefault }: { artisanId: string; artisanIsDefault: boolean }) {
+export function NouvelleDemandeForm({ artisanId }: { artisanId: string }) {
   const [message, setMessage] = useState("");
   const [type, setType] = useState<TypeChoix>("auto");
   const [client, setClient] = useState(vide);
@@ -89,11 +89,9 @@ export function NouvelleDemandeForm({ artisanId, artisanIsDefault }: { artisanId
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <form onSubmit={envoyer} className="min-w-0 space-y-4" noValidate>
-        {artisanIsDefault && (
-          <Alert tone="info">
-            Votre compte n’est rattaché à aucun artisan : les demandes utilisent l’artisan de démonstration <b className="font-mono">{artisanId}</b>.
-          </Alert>
-        )}
+        <p className="text-xs text-muted">
+          Entreprise : <span className="font-mono">{artisanId}</span>
+        </p>
         <div>
           <div className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-muted">
             <Sparkles className="size-4" /> Exemples
@@ -262,4 +260,5 @@ const TITRE_ERREUR: Record<string, string> = {
   limite: "Trop de demandes",
   config: "Configuration incomplète",
   non_connecte: "Session expirée",
+  compte_non_active: "Compte non activé",
 };

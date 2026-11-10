@@ -168,6 +168,7 @@ export function erreurAgent(resultat: unknown): { erreur: string; brut: string }
 
 export type CodeErreur =
   | "non_connecte"
+  | "compte_non_active"
   | "validation"
   | "limite"
   | "config"
