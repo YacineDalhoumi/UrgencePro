@@ -204,8 +204,7 @@ begin
   return new;
 end $$;
 
-drop trigger if exists demandes_trace_etape on public.demandes;
-create trigger demandes_trace_etape
+create or replace trigger demandes_trace_etape
   after insert or update of etape on public.demandes
   for each row when (new.artisan_id is not null)
   execute function app.trace_etape();
@@ -217,11 +216,9 @@ begin
   return new;
 end $$;
 
-drop trigger if exists demandes_updated_at on public.demandes;
-create trigger demandes_updated_at before update on public.demandes
+create or replace trigger demandes_updated_at before update on public.demandes
   for each row execute function app.maj_updated_at();
-drop trigger if exists interventions_updated_at on public.interventions;
-create trigger interventions_updated_at before update on public.interventions
+create or replace trigger interventions_updated_at before update on public.interventions
   for each row execute function app.maj_updated_at();
 
 -- Un devis signé est figé (ni modification ni suppression). Seule la purge des données de test peut passer outre.
@@ -234,8 +231,7 @@ begin
   return case when tg_op = 'DELETE' then old else new end;
 end $$;
 
-drop trigger if exists devis_verrou on public.devis;
-create trigger devis_verrou before update or delete on public.devis
+create or replace trigger devis_verrou before update or delete on public.devis
   for each row execute function app.verrou_devis_signe();
 
 -- Une facture émise est figée (correction par avoir uniquement)
@@ -248,8 +244,7 @@ begin
   return case when tg_op = 'DELETE' then old else new end;
 end $$;
 
-drop trigger if exists factures_verrou on public.factures;
-create trigger factures_verrou before update or delete on public.factures
+create or replace trigger factures_verrou before update or delete on public.factures
   for each row execute function app.verrou_facture_emise();
 
 revoke execute on function app.trace_etape(), app.maj_updated_at(), app.verrou_devis_signe(), app.verrou_facture_emise() from public;
