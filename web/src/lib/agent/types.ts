@@ -17,28 +17,25 @@ export const TYPE_LABEL: Record<TypeDemande, string> = {
 
 const texte = (max: number) => z.string().trim().max(max).optional().default("");
 
+/** Nouvelle demande saisie par le gérant : elle part directement en devis (email du client obligatoire). */
 export const NouvelleDemandeSchema = z.object({
   message: z.string().trim().min(5, "Décrivez la demande (5 caractères minimum).").max(4000, "4 000 caractères maximum."),
-  type_demande: z.enum(["auto", ...TYPES_DEMANDE]).default("auto"),
-  client: z
-    .object({
-      nom: texte(120),
-      telephone: texte(30).refine((v) => !v || /^[+0-9 ().-]{6,30}$/.test(v), "Numéro de téléphone invalide."),
-      email: texte(160).refine((v) => !v || z.string().email().safeParse(v).success, "Adresse email invalide."),
-      adresse: texte(240),
-    })
-    .optional(),
-  intervention: z
-    .object({
-      date: texte(40),
-      technicien: texte(120),
-      constat: texte(2000),
-      travaux: z.array(z.string().trim().max(300)).max(30).optional().default([]),
-      materiel: z.array(z.string().trim().max(300)).max(30).optional().default([]),
-    })
-    .optional(),
+  client: z.object({
+    nom: z.string().trim().min(2, "Indiquez le nom du client.").max(120),
+    telephone: texte(30).refine((v) => !v || /^[+0-9 ().-]{6,30}$/.test(v), "Numéro de téléphone invalide."),
+    email: z.string().trim().max(160).email("Adresse email invalide."),
+    adresse: z.string().trim().min(5, "Indiquez l'adresse d'intervention.").max(240),
+  }),
+  canal: z.enum(["email", "sms"]).default("email"),
 });
 export type NouvelleDemande = z.input<typeof NouvelleDemandeSchema>;
+
+/** Formulaire « Intervention terminée ». */
+export const TerminerSchema = z.object({
+  constat: z.string().trim().min(3, "Décrivez le constat.").max(2000),
+  travaux: z.array(z.string().trim().max(300)).max(30).default([]).transform((a) => a.filter(Boolean)),
+  materiel: z.array(z.string().trim().max(300)).max(30).default([]).transform((a) => a.filter(Boolean)),
+});
 
 // ——— Réponse du webhook (validation tolérante : les agents IA peuvent varier) ———
 
@@ -177,8 +174,9 @@ export type CodeErreur =
   | "webhook_introuvable"
   | "erreur_workflow"
   | "reponse_illisible"
-  | "reseau";
+  | "reseau"
+  | "base";
 
 export type ApiReponse =
-  | { ok: true; data: ReponseAgent; dureeMs: number; simule: boolean }
-  | { ok: false; code: CodeErreur; message: string; details?: Record<string, string> };
+  | { ok: true; demandeId: string; avertissement?: string }
+  | { ok: false; code: CodeErreur; message: string; details?: Record<string, string>; demandeId?: string };

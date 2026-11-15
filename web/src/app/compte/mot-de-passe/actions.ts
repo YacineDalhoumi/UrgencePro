@@ -11,5 +11,5 @@ export async function changerMotDePasse(_prev: { erreur?: string }, form: FormDa
   const supabase = await createAuthClient();
   const { error } = await supabase.auth.updateUser({ password: mdp });
   if (error) return { erreur: `Modification impossible : ${error.message}` };
-  redirect("/agent/nouvelle");
+  redirect("/");
 }

@@ -23,13 +23,11 @@ export function n8nConfig() {
   };
 }
 
-/** Configuration du projet Supabase dédié à l'agent (clé de service : serveur uniquement). */
-export function agentDbConfig() {
-  return {
-    url: required("AGENT_SUPABASE_URL"),
-    serviceKey: required("AGENT_SUPABASE_SERVICE_KEY"),
-  };
-}
+/**
+ * Clé serveur : autorise la planification automatique après signature (aucun utilisateur connecté).
+ * Seule son empreinte SHA-256 est enregistrée en base (app.secrets).
+ */
+export const cleServeur = () => required("APP_CLE_SERVEUR");
 
 /** Artisan utilisé quand le compte n'a pas encore d'artisan_id rattaché (mode démo). */
 export const defaultArtisanId = () => process.env.AGENT_ARTISAN_ID?.trim() || "ART-DEMO-001";

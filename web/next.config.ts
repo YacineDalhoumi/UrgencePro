@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Anciennes adresses de l'espace agent → nouvelles pages (aucun lien existant ne casse)
+  async redirects() {
+    return [
+      { source: "/agent", destination: "/tableau-de-bord", permanent: false },
+      { source: "/agent/nouvelle", destination: "/demandes/nouvelle", permanent: false },
+      { source: "/agent/historique", destination: "/demandes", permanent: false },
+      { source: "/agent/historique/:id", destination: "/demandes/:id", permanent: false },
+      { source: "/agent/diagnostic", destination: "/parametres", permanent: false },
+    ];
+  },
   // En-têtes de sécurité de base
   async headers() {
     return [

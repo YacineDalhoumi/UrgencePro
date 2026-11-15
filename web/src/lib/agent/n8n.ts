@@ -9,6 +9,22 @@ export interface PayloadN8n {
   client?: { nom: string; telephone: string; email: string; adresse: string };
   intervention?: { date: string; technicien: string; constat: string; travaux: string[]; materiel: string[] };
   artisan_id: string;
+  // ——— Cycle de vie d'une demande créée par l'application ———
+  /** Référence de la demande (DEM-AAAA-NNNNN) */
+  reference?: string;
+  /** Demande existante : n8n journalise le traitement au lieu de créer une nouvelle demande */
+  demande_id?: string;
+  /** Numéros officiels attribués par la base (numérotation continue par entreprise) */
+  numero_devis?: string;
+  numero_facture?: string;
+  /** Lien personnel de signature du devis, ajouté à l'email */
+  lien_signature?: string;
+  /** Canal d'envoi au client (« email » aujourd'hui, « sms » plus tard) */
+  canal?: "email" | "sms";
+  /** Interventions déjà planifiées (planning) */
+  creneaux_occupes?: { technicien_id: string; debut: string; fin: string }[];
+  /** Techniciens de l'entreprise (utilisé par le mode simulé ; n8n relit les siens en base) */
+  techniciens?: { id: string; nom: string; disponible?: boolean }[];
 }
 
 export type ResultatAppel =
@@ -93,4 +109,5 @@ export const HTTP_STATUS: Record<CodeErreur, number> = {
   erreur_workflow: 502,
   reponse_illisible: 502,
   reseau: 502,
+  base: 422,
 };

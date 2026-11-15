@@ -3,9 +3,12 @@ import { refreshSession } from "@/lib/supabase/proxy-session";
 import { publiquesManquantes } from "@/lib/config-check";
 
 /**
- * Proxy (ex-middleware) : rafraîchit la session et protège l'espace « agent ».
- * Les routes /api/agent/* vérifient elles-mêmes la session et répondent 401 en JSON.
+ * Proxy (ex-middleware) : rafraîchit la session et protège l'espace de travail.
+ * Les routes /api/* vérifient elles-mêmes la session et répondent 401 en JSON.
  */
+/** Pages réservées aux comptes connectés (la page publique /devis/… reste accessible sans compte). */
+const ESPACE = ["/tableau-de-bord", "/demandes", "/agenda", "/techniciens", "/parametres"];
+
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -30,7 +33,7 @@ export async function proxy(request: NextRequest) {
     session = { response: NextResponse.next({ request }), userId: null };
   }
   const { response, userId } = session;
-  if (!userId && pathname.startsWith("/agent")) {
+  if (!userId && ESPACE.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     const url = request.nextUrl.clone();
     url.pathname = "/connexion";
     url.search = `?suivant=${encodeURIComponent(pathname + search)}`;

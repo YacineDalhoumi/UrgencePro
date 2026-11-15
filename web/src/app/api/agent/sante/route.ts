@@ -6,7 +6,7 @@ import { testerBase } from "@/lib/agent/db";
 /**
  * GET /api/agent/sante — vérifie la configuration sans déclencher l'agent :
  * 1) variables présentes ; 2) le webhook répond et refuse un faux secret (aucune exécution n8n) ;
- * 3) la table « demandes » est lisible.
+ * 3) la base répond avec la session de l'utilisateur ; 4) la clé serveur de planification est présente.
  */
 export async function GET() {
   const user = await getCurrentUser();
@@ -45,16 +45,17 @@ export async function GET() {
 
   try {
     const base = await testerBase();
-    checks.push({ nom: "Base Supabase de l'agent", ...base });
+    checks.push({ nom: "Base de données", ...base });
   } catch (e) {
-    checks.push({ nom: "Base Supabase de l'agent", ok: false, message: (e as Error).message });
+    checks.push({ nom: "Base de données", ok: false, message: (e as Error).message });
   }
 
   checks.push({
-    nom: "Compte",
-    ok: true,
-    message: `Entreprise rattachée au compte : ${user.artisanId}.`,
+    nom: "Planification après signature",
+    ok: !!process.env.APP_CLE_SERVEUR?.trim(),
+    message: process.env.APP_CLE_SERVEUR?.trim() ? "Clé serveur présente." : "Variable APP_CLE_SERVEUR manquante : les devis signés ne seront pas planifiés automatiquement.",
   });
+  checks.push({ nom: "Compte", ok: true, message: user.role === "gerant" ? "Gérant de l'entreprise." : "Technicien." });
 
   return NextResponse.json({ ok: checks.every((c) => c.ok), checks });
 }

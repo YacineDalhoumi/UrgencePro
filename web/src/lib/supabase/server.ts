@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * Client Supabase « authentification » (projet de l'application), lié aux cookies de la requête.
@@ -21,5 +22,15 @@ export async function createAuthClient() {
         }
       },
     },
+  });
+}
+
+/**
+ * Client sans session (rôle « anon ») pour les traitements serveur déclenchés par la page publique
+ * de signature. Il n'a accès qu'aux fonctions protégées par le jeton du devis (et la clé serveur).
+ */
+export function createAnonClient() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }

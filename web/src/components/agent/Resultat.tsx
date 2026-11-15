@@ -46,21 +46,10 @@ export function ResultatAgent(p: ResultatProps) {
         {p.reference && <span className="font-mono text-sm text-muted">{p.reference}</span>}
         {p.dureeMs ? <span className="text-sm text-muted">· traité en {Math.round(p.dureeMs / 1000)} s</span> : null}
       </div>
-      {p.routage?.raison && (
-        <p className="text-sm text-muted">
-          Type choisi par le routeur IA{p.routage.confiance != null ? ` (confiance ${Math.round(Number(p.routage.confiance) * 100)} %)` : ""} : {p.routage.raison}
-        </p>
-      )}
 
       {err || !p.success ? (
         <Alert tone="bad" title="L'agent n'a pas produit de résultat exploitable">
           <p>{err?.erreur ?? "Le traitement s'est terminé en erreur."} Reformulez la demande ou réessayez ; si le problème persiste, consultez l’exécution dans n8n.</p>
-          {err?.brut && (
-            <details className="mt-2">
-              <summary className="cursor-pointer font-semibold">Voir la réponse brute</summary>
-              <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-surface p-2 font-mono text-xs">{err.brut}</pre>
-            </details>
-          )}
         </Alert>
       ) : (
         <>
@@ -69,16 +58,12 @@ export function ResultatAgent(p: ResultatProps) {
           {type === "rapport_facture" && <RapportFacture r={p.resultat} />}
           {type === "communication" && <Communication r={p.resultat} />}
           {type === "planning" && <Planning r={p.resultat} actions={actions} />}
-          {!(type in TYPE_LABEL) && <Alert tone="warn" title="Type de résultat inconnu">L’agent a renvoyé le type « {type || "vide"} ». Le contenu brut est affiché ci-dessous.</Alert>}
+          {!(type in TYPE_LABEL) && <Alert tone="warn" title="Type de résultat inconnu">L’agent a renvoyé le type « {type || "vide"} ». </Alert>}
         </>
       )}
 
       <ActionsFaites a={actions} type={type} />
 
-      <details className="rounded-md border border-border bg-surface px-3 py-2 text-sm">
-        <summary className="cursor-pointer font-semibold text-muted">Voir le JSON renvoyé par l’agent</summary>
-        <pre className="mt-2 max-h-80 overflow-auto rounded bg-sunken p-2 font-mono text-xs">{JSON.stringify({ resultat: p.resultat, actions: p.actions }, null, 2)}</pre>
-      </details>
     </div>
   );
 }
@@ -124,7 +109,7 @@ function Stat({ label, value, icon: Icon }: { label: string; value: React.ReactN
   );
 }
 
-function TableLignes({ lignes, totaux }: { lignes: Ligne[]; totaux: { ht: number; taux: number; tva: number; ttc: number } }) {
+export function TableLignes({ lignes, totaux }: { lignes: Ligne[]; totaux: { ht: number; taux: number; tva: number; ttc: number } }) {
   return (
     <>
       {/* Tableau sur grand écran, cartes empilées sur téléphone */}

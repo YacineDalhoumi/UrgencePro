@@ -12,7 +12,7 @@ export interface EtatConnexion {
 /** N'accepte que des chemins internes (évite les redirections ouvertes). */
 const cheminSur = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v : "";
-  return s.startsWith("/") && !s.startsWith("//") ? s : "/agent/nouvelle";
+  return s.startsWith("/") && !s.startsWith("//") ? s : "/";
 };
 
 export async function seConnecter(_prev: EtatConnexion, form: FormData): Promise<EtatConnexion> {

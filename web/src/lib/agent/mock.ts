@@ -6,7 +6,7 @@ import type { TypeDemande } from "./types";
 /**
  * Mode simulé (AGENT_MOCK=1) : réponses fictives au format exact du webhook, sans appel à n8n,
  * sans email, sans événement d'agenda et sans écriture en base.
- * Mots-clés pour tester les erreurs : #timeout, #secret, #404, #500, #json.
+ * Mots-clés pour tester les erreurs : #timeout, #secret, #404, #500, #json, #aucun-creneau (planning sans créneau).
  */
 
 function classer(message: string): TypeDemande {
@@ -40,7 +40,7 @@ function resultatPour(type: TypeDemande, p: PayloadN8n, ref: string): Record<str
     case "devis":
       return {
         agent: "devis",
-        numero_devis: `DEV-DEMO-${ref.slice(-6)}`,
+        numero_devis: p.numero_devis || `DEV-DEMO-${ref.slice(-6)}`,
         lignes: [
           { designation: "Déplacement zone 1", quantite: 1, prix_unitaire_ht: 35, total_ht: 35 },
           { designation: "Remplacement cylindre européen 30/30", quantite: 1, prix_unitaire_ht: 45, total_ht: 45 },
@@ -71,7 +71,7 @@ function resultatPour(type: TypeDemande, p: PayloadN8n, ref: string): Record<str
           utilisable_assurance: true,
         },
         facture: {
-          numero: `FAC-DEMO-${ref.slice(-6)}`,
+          numero: p.numero_facture || `FAC-DEMO-${ref.slice(-6)}`,
           lignes: [
             { designation: "Déplacement", quantite: 1, prix_unitaire_ht: 35, total_ht: 35 },
             { designation: "Cylindre européen 30/30", quantite: 1, prix_unitaire_ht: 45, total_ht: 45 },
@@ -98,19 +98,27 @@ function resultatPour(type: TypeDemande, p: PayloadN8n, ref: string): Record<str
         a_envoyer: !!p.client?.email,
         infos_manquantes: p.client?.email ? [] : ["email du client"],
       };
-    case "planning":
+    case "planning": {
+      // Techniciens réels de l'entreprise quand l'application les fournit (planification après signature)
+      const dispo = (p.techniciens ?? []).filter((t) => t.disponible !== false);
+      const t1 = dispo[0] ?? { id: "TECH-DEMO-02", nom: "Julien (fictif)" };
+      const t2 = dispo[1] ?? dispo[0] ?? { id: "TECH-DEMO-01", nom: "Karim (fictif)" };
+      if (p.message.includes("#aucun-creneau")) {
+        return { agent: "planning", action: "proposer", creneau_propose: null, alternatives: [], infos_manquantes: ["disponibilités du client"], avertissements: [], message_client: "" };
+      }
       return {
         agent: "planning",
         action: "proposer",
-        creneau_propose: { date: demain, heure_debut: "10:00", heure_fin: "11:30", technicien_id: "TECH-DEMO-02", technicien_nom: "Julien (fictif)" },
+        creneau_propose: { date: demain, heure_debut: "10:00", heure_fin: "11:30", technicien_id: t1.id, technicien_nom: t1.nom },
         alternatives: [
-          { date: demain, heure_debut: "14:00", heure_fin: "15:30", technicien_id: "TECH-DEMO-01", technicien_nom: "Karim (fictif)" },
-          { date: demain, heure_debut: "16:30", heure_fin: "18:00", technicien_id: "TECH-DEMO-02", technicien_nom: "Julien (fictif)" },
+          { date: demain, heure_debut: "14:00", heure_fin: "15:30", technicien_id: t2.id, technicien_nom: t2.nom },
+          { date: demain, heure_debut: "16:30", heure_fin: "18:00", technicien_id: t1.id, technicien_nom: t1.nom },
         ],
         infos_manquantes: [],
         avertissements: [],
         message_client: `Nous vous proposons une intervention le ${demain} entre 10h00 et 11h30.`,
       };
+    }
   }
 }
 

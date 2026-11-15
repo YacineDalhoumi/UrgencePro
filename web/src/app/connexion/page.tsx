@@ -14,7 +14,7 @@ export default async function PageConnexion({ searchParams }: { searchParams: Pr
         </div>
         <h1 className="font-display text-2xl font-extrabold">Connexion</h1>
         <p className="mt-1 text-sm text-muted">Accès réservé aux comptes créés par l’administrateur.</p>
-        <FormulaireConnexion suivant={suivant ?? "/agent/nouvelle"} erreurInitiale={erreur === "lien" ? "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau." : undefined} />
+        <FormulaireConnexion suivant={suivant ?? "/"} erreurInitiale={erreur === "lien" ? "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau." : undefined} />
       </div>
     </main>
   );
