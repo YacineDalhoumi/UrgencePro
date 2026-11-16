@@ -45,7 +45,7 @@ async function produireDevis(
   canal: "email" | "sms",
 ): Promise<Issue> {
   const res = await agent({
-    message,
+    message: `${message}\n\n(Numéro du devis à utiliser : ${d.numero_devis}.)`,
     type_demande: "devis",
     artisan_id: d.artisan_id,
     reference: d.reference,
@@ -235,7 +235,7 @@ export async function terminerEtFacturer(interventionId: string, saisie: { const
     ? ` Le devis signé ${ctx.devis.numero} prévoyait : ${JSON.stringify(ctx.devis.lignes)} (total TTC ${ctx.devis.total_ttc} €, TVA ${ctx.devis.tva_taux} %). Facturer selon ce devis, sauf travaux supplémentaires décrits.`
     : "";
   const res = await agent({
-    message: `Intervention terminée pour la demande ${ctx.reference} : ${ctx.message}.${rappelDevis} Durée : ${ctx.intervention.duree_minutes} minutes.`,
+    message: `Intervention terminée pour la demande ${ctx.reference} : ${ctx.message}.${rappelDevis} Durée : ${ctx.intervention.duree_minutes} minutes. Numéro de la facture à utiliser : ${ctx.numero_facture}.`,
     type_demande: "rapport_facture",
     artisan_id: ctx.artisan_id,
     reference: ctx.reference,
