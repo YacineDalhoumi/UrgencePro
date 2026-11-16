@@ -119,8 +119,9 @@ npm run typecheck && npm run lint
 ## Déploiement sur Vercel
 
 1. Root Directory = `web`, région `cdg1` (Paris).
-2. Variables de `.env.example` dans *Settings → Environment Variables*, dont **`APP_CLE_SERVEUR`** (sans elle, les devis
-   signés ne sont pas planifiés automatiquement : ils apparaissent « À planifier »). `AGENT_MOCK=0`, pas d’`AUTH_DEV_BYPASS`.
+2. Variables de `.env.example` dans *Settings → Environment Variables*. `APP_CLE_SERVEUR` est facultative : à défaut,
+   le secret du webhook n8n sert de clé serveur (son empreinte est enregistrée en base, ligne `cle_serveur_n8n`).
+   `AGENT_MOCK=0`, pas d’`AUTH_DEV_BYPASS`.
 3. Les routes d’agent déclarent `maxDuration` 70 à 120 s : l’offre Vercel doit l’autoriser.
 
 ## Limites connues

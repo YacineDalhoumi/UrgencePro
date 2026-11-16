@@ -27,7 +27,12 @@ export function n8nConfig() {
  * Clé serveur : autorise la planification automatique après signature (aucun utilisateur connecté).
  * Seule son empreinte SHA-256 est enregistrée en base (app.secrets).
  */
-export const cleServeur = () => required("APP_CLE_SERVEUR");
+export const cleServeur = () => {
+  // À défaut, le secret du webhook n8n (déjà présent côté serveur) sert de clé ; son empreinte est en base.
+  const cle = process.env.APP_CLE_SERVEUR?.trim() || process.env.N8N_WEBHOOK_SECRET?.trim();
+  if (!cle) throw new ConfigError("Variable d'environnement manquante : APP_CLE_SERVEUR (ou N8N_WEBHOOK_SECRET)");
+  return cle;
+};
 
 /** Artisan utilisé quand le compte n'a pas encore d'artisan_id rattaché (mode démo). */
 export const defaultArtisanId = () => process.env.AGENT_ARTISAN_ID?.trim() || "ART-DEMO-001";

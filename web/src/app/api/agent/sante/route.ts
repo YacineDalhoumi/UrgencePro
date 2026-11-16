@@ -52,8 +52,12 @@ export async function GET() {
 
   checks.push({
     nom: "Planification après signature",
-    ok: !!process.env.APP_CLE_SERVEUR?.trim(),
-    message: process.env.APP_CLE_SERVEUR?.trim() ? "Clé serveur présente." : "Variable APP_CLE_SERVEUR manquante : les devis signés ne seront pas planifiés automatiquement.",
+    ok: !!(process.env.APP_CLE_SERVEUR?.trim() || process.env.N8N_WEBHOOK_SECRET?.trim()),
+    message: process.env.APP_CLE_SERVEUR?.trim()
+      ? "Clé serveur présente (APP_CLE_SERVEUR)."
+      : process.env.N8N_WEBHOOK_SECRET?.trim()
+        ? "Clé serveur : secret du webhook n8n."
+        : "Aucune clé serveur : les devis signés ne seront pas planifiés automatiquement.",
   });
   checks.push({ nom: "Compte", ok: true, message: user.role === "gerant" ? "Gérant de l'entreprise." : "Technicien." });
 

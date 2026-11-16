@@ -40,7 +40,7 @@ begin
   insert into public.demandes (reference, artisan_id, client_id, client_nom, message, type_demande)
   values ('TEST-B-DEM', 'ART-TEST-B', 'TEST-B-CLI', 'Client de B', 'Demande privée de B', 'devis');
   -- Clé serveur de test (le vrai secret est restauré par l'annulation finale)
-  insert into app.secrets (nom, valeur_hash) values ('cle_serveur', app.empreinte('cle-de-test'))
+  insert into app.secrets (nom, valeur_hash) values ('cle_serveur', app.empreinte('cle-de-test-suffisamment-longue'))
   on conflict (nom) do update set valeur_hash = excluded.valeur_hash;
 
   -- ——— 1. Gérant A crée une demande → devis réservé ———
@@ -154,13 +154,13 @@ begin
     perform public.planning_contexte(jeton, 'mauvaise-cle');
     raise exception 'ÉCHEC 6 : mauvaise clé serveur acceptée';
   exception when insufficient_privilege then null; end;
-  r := public.planning_contexte(jeton, 'cle-de-test');
+  r := public.planning_contexte(jeton, 'cle-de-test-suffisamment-longue');
   if jsonb_array_length(r -> 'techniciens') <> 2 then raise exception 'ÉCHEC 6b : techniciens du contexte %', r -> 'techniciens'; end if;
-  r := public.planifier_apres_signature(jeton, 'cle-de-test', 'TEST-A-T1',
+  r := public.planifier_apres_signature(jeton, 'cle-de-test-suffisamment-longue', 'TEST-A-T1',
          date_trunc('hour', now()) + interval '2 days 9 hours', date_trunc('hour', now()) + interval '2 days 10 hours 30 minutes');
   if not (r ->> 'ok')::boolean then raise exception 'ÉCHEC 6c : planification %', r; end if;
   v_int := (r ->> 'intervention_id')::uuid;
-  r := public.planifier_apres_signature(jeton, 'cle-de-test', 'TEST-A-T1',
+  r := public.planifier_apres_signature(jeton, 'cle-de-test-suffisamment-longue', 'TEST-A-T1',
          date_trunc('hour', now()) + interval '3 days', date_trunc('hour', now()) + interval '3 days 1 hour');
   if r ->> 'raison' <> 'deja_planifiee' then raise exception 'ÉCHEC 6d : double planification %', r; end if;
   nb := nb + 4;
