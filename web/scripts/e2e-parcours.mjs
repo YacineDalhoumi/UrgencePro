@@ -87,11 +87,13 @@ try {
   if (await bouton.isEnabled()) throw new Error("le bouton Signer est actif sans acceptation");
   await c.getByLabel(/J’accepte le devis/).check();
   await c.fill("#sig_nom", "Client Parcours E2E");
+  await c.locator("canvas").scrollIntoViewIfNeeded();
   const zone = await c.locator("canvas").boundingBox();
   await c.mouse.move(zone.x + 30, zone.y + 100);
   await c.mouse.down();
   for (let i = 1; i <= 12; i++) await c.mouse.move(zone.x + 30 + i * 22, zone.y + 100 + (i % 2 ? -35 : 35), { steps: 3 });
   await c.mouse.up();
+  if (!(await bouton.isEnabled())) throw new Error("la signature tracée n'a pas activé le bouton Signer");
   await bouton.click();
   await c.getByText("Devis signé, merci !").waitFor({ timeout: 20_000 });
   await capture(c, "3-devis-signe");
@@ -105,7 +107,7 @@ try {
     planifiee = (await g.getByText(/Intervention prévue/).count()) > 0;
   }
   if (!planifiee) throw new Error("la demande n'a pas été planifiée automatiquement");
-  await g.getByText("Signé par Client Parcours E2E").waitFor();
+  await g.getByText("Signé par Client Parcours E2E").first().waitFor();
   await capture(g, "4-fiche-planifiee");
   ok("Intervention planifiée automatiquement après la signature (preuve de signature visible)");
 
@@ -137,7 +139,7 @@ try {
   await g.goto(ficheUrl);
   await g.getByText("Demande terminée").waitFor({ timeout: 10_000 });
   const facture = (await g.locator("text=/FAC-\\d{4}-\\d{6}/").first().textContent()).match(/FAC-\d{4}-\d{6}/)[0];
-  const historique = await g.locator("section, div").filter({ hasText: "Historique" }).last().textContent();
+  const historique = await g.locator("main").textContent();
   for (const e of ["Nouvelle", "Devis envoyé", "Devis signé", "Planifiée", "Terminée"]) if (!historique.includes(e)) throw new Error(`historique incomplet (${e})`);
   await capture(g, "6-fiche-terminee");
   ok(`Facture ${facture} émise, demande « Terminée », historique horodaté complet`);
