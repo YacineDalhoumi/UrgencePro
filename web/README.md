@@ -1,24 +1,57 @@
 # UrgencePro — application web (Next.js)
 
-Première brique de l’application réelle (voir `../docs/ARCHITECTURE.md`). Elle contient pour l’instant le module
-**Agent IA** : envoi d’une demande au workflow n8n *AgentMultiUrgence*, affichage du résultat et historique.
+Application des entreprises de dépannage : demandes, devis signés en ligne, agenda des techniciens, factures et
+tableau de bord. Les documents (devis, factures, emails) sont produits par le workflow n8n *AgentMultiUrgence*.
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS 4
-- Authentification : Supabase Auth (projet Supabase de l’**application**)
-- Agent : webhook n8n + projet Supabase **AgentMultiUrgence** (lu côté serveur uniquement)
+- Supabase : authentification, base de données avec règles RLS (une entreprise ne voit jamais les données d’une autre)
+- n8n : agents IA, PDF, emails (appelé uniquement par le serveur)
 - Hébergement : Vercel
 
-## Sécurité : ce qui reste sur le serveur
+## Le parcours d’une demande
 
-Le navigateur n’appelle **jamais** n8n et ne voit aucun secret :
+```
+Nouvelle ─▶ Devis envoyé ─▶ Devis signé ─▶ Planifiée ─▶ Terminée
+                 │                                      (+ Refusée, Annulée)
+                 └─ lien de signature envoyé au client
+```
+
+1. **Le gérant crée la demande** (`/demandes/nouvelle`) : fiche client (réutilisée si l’email ou le téléphone est connu),
+   numéro de demande et de devis réservés en base, appel n8n `devis` avec `numero_devis` et `lien_signature`.
+   n8n envoie le PDF et un bouton « Consulter et signer le devis ».
+2. **Le client signe** sur `/devis/[jeton]` (sans compte, adapté au téléphone) : case d’acceptation, nom, signature
+   au doigt. La base enregistre l’image, le nom, la date, l’adresse IP, le navigateur et l’empreinte SHA-256 du contenu
+   exact du devis, puis le verrouille (plus aucune modification possible). Le client peut aussi refuser.
+3. **Planification automatique** (en arrière-plan) : appel n8n `planning` avec les créneaux déjà occupés de chaque
+   technicien. L’application essaie le créneau proposé puis les alternatives ; la base refuse tout chevauchement.
+   Puis appel `communication` : confirmation au client. Sans créneau libre : alerte « À planifier manuellement ».
+4. **Intervention terminée** (fiche demande ou agenda, par le technicien ou le gérant) : constat, travaux, matériel →
+   numéro de facture continu réservé en base → appel n8n `rapport_facture` → facture, remerciement et lien d’avis Google.
+
+Chaque changement d’étape est horodaté dans `demande_historique` (auteur : gérant, technicien, client ou automatique).
+Le mode démo de n8n reste actif : tous les emails partent vers l’adresse de test.
+
+## Rôles
+
+| Rôle | Menu | Accès |
+|---|---|---|
+| Gérant | Tableau de bord · Demandes · Agenda · Techniciens · Paramètres | toutes les données de son entreprise |
+| Technicien | Agenda · Paramètres | ses interventions et les demandes liées ; peut clôturer ses interventions |
+
+Le rôle et l’entreprise viennent de la table `membres` (lue avec la session : l’utilisateur ne peut pas les modifier).
+Un compte sans ligne dans `membres` voit « Compte non activé ».
+
+## Sécurité : ce qui reste sur le serveur
 
 | Élément | Où il vit |
 |---|---|
 | `N8N_WEBHOOK_URL`, `N8N_WEBHOOK_SECRET` | `src/lib/env.ts` → `src/lib/agent/n8n.ts` (`server-only`) |
-| `AGENT_SUPABASE_SERVICE_KEY` | `src/lib/agent/db.ts` (`server-only`) |
-| `artisan_id` envoyé à n8n | lu dans le compte connecté (`app_metadata`), jamais fourni par le navigateur |
+| `APP_CLE_SERVEUR` | serveur uniquement ; seule son empreinte est en base (`app.secrets`) |
+| Jeton de signature | 32 octets aléatoires, présent seulement dans le lien envoyé ; la base ne garde que son empreinte |
+| Données métier | lues et écrites avec la session de l’utilisateur ; les écritures passent par des fonctions SQL contrôlées |
 
-Les modules marqués `import "server-only"` font échouer la compilation s’ils sont importés côté client.
+L’application n’utilise **aucune clé de service** Supabase. Les règles RLS et les fonctions sont dans
+`../supabase/migrations/`, les tests de sécurité dans `../supabase/tests/rls_et_parcours.sql`.
 
 ## Démarrage local
 
@@ -29,99 +62,71 @@ cp .env.example .env.local   # puis renseigner les valeurs
 npm run dev                  # http://localhost:3000
 ```
 
-Node.js 20.12 ou plus récent.
-
-### Développer l’interface sans rien connecter
-
-Dans `.env.local` :
-
-```
-AGENT_MOCK=1          # réponses simulées, aucun appel à n8n
-AUTH_DEV_BYPASS=1     # accès sans connexion (npm run dev uniquement, ignoré en production)
-```
-
-Sans `AGENT_SUPABASE_URL`, l’historique affiche alors des demandes fictives.
-Pour tester les erreurs en mode simulé, ajoutez un mot-clé dans le message : `#timeout`, `#secret`, `#404`, `#500`, `#json`.
+Node.js 20.12 ou plus récent. `AGENT_MOCK=1` remplace n8n par des réponses simulées (aucun email) ; mots-clés de test
+dans la demande : `#timeout`, `#secret`, `#404`, `#500`, `#json`, `#aucun-creneau`.
 
 ## Pages et routes
 
 | Chemin | Rôle |
 |---|---|
-| `/connexion` | Connexion email + mot de passe, lien « mot de passe oublié » |
-| `/auth/confirm` | Validation des liens reçus par email (invitation, réinitialisation) |
-| `/compte/mot-de-passe` | Choix d’un mot de passe |
-| `/compte/non-active` | Compte connecté mais rattaché à aucune entreprise |
-| `/agent/nouvelle` | Nouvelle demande + résultat de l’agent |
-| `/agent/historique` | Historique (filtres type / statut, pagination) |
-| `/agent/historique/[id]` | Fiche détaillée d’une demande |
-| `/agent/diagnostic` | Test de la connexion (sans déclencher l’agent) |
-| `POST /api/agent/demandes` | Appel au workflow (session, limite 10/min, validation, délai 60 s) |
-| `GET /api/agent/sante` | Vérification de la configuration, sans effet |
+| `/tableau-de-bord` | 6 indicateurs comparés à la période précédente, 2 graphiques, liste « À traiter » (calculs en SQL) |
+| `/demandes`, `/demandes/nouvelle`, `/demandes/[id]` | liste filtrable, création, fiche (devis, preuve de signature, intervention, facture, historique) |
+| `/agenda` | semaine (jour sur téléphone), une couleur par technicien, filtre, temps réel, déplacement/réattribution |
+| `/techniciens` | ajout, couleur, disponibilité, création du compte de connexion (mot de passe provisoire) |
+| `/parametres` | entreprise (logo, lien d’avis Google, validité des devis), mot de passe, diagnostic |
+| `/devis/[jeton]` | page publique de signature |
+| `/agent/*` | anciennes adresses, redirigées vers les nouvelles |
+| `POST /api/agent/demandes` | nouvelle demande → devis (gérant, limite 10/min, délai 60 s) |
+| `POST /api/demandes/[id]/devis` | nouvelle tentative de devis (même numéro, nouveau lien) |
+| `POST /api/devis/planifier` | planification après signature (répond tout de suite, continue en arrière-plan) |
+| `POST /api/interventions/[id]/terminer` | intervention terminée → facture ; corps vide = nouvelle tentative |
+| `GET /api/agent/sante` | vérification de la configuration, sans effet |
 
-### Codes renvoyés par `POST /api/agent/demandes`
-
-| HTTP | `code` | Cas |
-|---|---|---|
-| 200 | — | Réponse de l’agent (`data.success` peut valoir `false` si l’agent a produit un JSON invalide) |
-| 400 | `validation` | Champ invalide (`details` par champ) |
-| 401 | `non_connecte` | Session absente ou expirée |
-| 429 | `limite` | Plus de 10 demandes par minute (en-tête `Retry-After`) |
-| 500 | `config` | Variable d’environnement manquante |
-| 502 | `secret_refuse` | n8n a refusé `x-okto-key` (401/403) |
-| 502 | `webhook_introuvable` | 404 : workflow désactivé ou URL incorrecte |
-| 502 | `erreur_workflow` | n8n a répondu 5xx (une étape du workflow a échoué) |
-| 502 | `reponse_illisible` / `reseau` | Réponse non JSON, serveur injoignable |
-| 504 | `timeout` | Pas de réponse en 60 s |
-
-## Tester la connexion au webhook
+## Tests
 
 ```bash
-npm run test:agent                    # SANS effet : variables, webhook (faux secret refusé), lecture Supabase
-npm run test:agent -- --complet       # + une vraie demande « communication »
-npm run test:agent -- --complet devis # + une vraie demande du type choisi
-npm run test:agent -- --tous          # + une vraie demande de chaque type (5 appels)
+npm test                 # tests unitaires (jeton, empreinte, heures de Paris, créneaux)
+npm run typecheck && npm run lint
 ```
 
-Un appel réel exécute tout le workflow : appels au modèle IA, email de démo, événement Google Agenda (planning),
-ligne ajoutée dans `demandes`. La page **Diagnostic** de l’application fait la même vérification sans effet.
+- **Sécurité RLS + parcours en base** : coller `../supabase/tests/rls_et_parcours.sql` dans l’éditeur SQL Supabase.
+  Résultat attendu : « TESTS OK (46 vérifications) » ; rien n’est conservé.
+- **Parcours complet dans un navigateur** (n8n simulé, base réelle) :
+  1. éditeur SQL : `../supabase/tests/e2e_preparer.sql` (crée l’entreprise `ART-TEST-E2E`) ;
+  2. `AGENT_MOCK=1 AGENT_MOCK_DELAY_MS=300 npm run build && AGENT_MOCK=1 npm start > /tmp/serveur.log` ;
+  3. `npm run test:e2e -- --journal /tmp/serveur.log` ;
+  4. éditeur SQL : `../supabase/tests/e2e_nettoyer.sql`.
+- **Webhook n8n réel** : `npm run test:agent` (sans effet) ou `npm run test:agent -- --complet devis`.
 
-## Mise en place de l’authentification Supabase
+## Mise en place Supabase
 
-1. Créez (ou choisissez) le projet Supabase de l’application et renseignez `NEXT_PUBLIC_SUPABASE_URL`
-   et `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (Project Settings → API Keys).
-2. **Authentication → Sign In / Providers** : désactivez « Allow new users to sign up ». Les comptes sont créés
-   par l’administrateur (Authentication → Users → Invite user).
-3. **Authentication → URL Configuration** : *Site URL* = l’URL Vercel ; ajoutez `http://localhost:3000/**` et
-   `https://<votre-domaine>/**` aux *Redirect URLs*.
-4. **Authentication → Emails** : les modèles par défaut fonctionnent (la route `/auth/confirm` accepte le paramètre `code`).
-   Pour des liens plus robustes (ouverts sur un autre appareil), utilisez
-   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite` (`type=recovery` pour la réinitialisation).
-5. Rattachez chaque compte à son artisan — **obligatoire** : un compte sans `artisan_id` voit la page « Compte non activé »
-   et l’API lui répond 403. Une inscription libre ne donne donc accès à rien. SQL Editor du projet de l’application :
-
+1. Appliquer les migrations de `../supabase/migrations/` (dans l’ordre).
+2. Clé serveur : générer une valeur aléatoire, la mettre dans `APP_CLE_SERVEUR`, et enregistrer son empreinte :
    ```sql
-   update auth.users
-   set raw_app_meta_data = raw_app_meta_data || '{"artisan_id": "ART-DEMO-001"}'
-   where email = 'artisan@example.com';
+   insert into app.secrets (nom, valeur_hash) values ('cle_serveur', encode(sha256(convert_to('<la valeur>', 'UTF8')), 'hex'))
+   on conflict (nom) do update set valeur_hash = excluded.valeur_hash, updated_at = now();
    ```
-
-   `app_metadata` n’est pas modifiable par l’utilisateur lui-même. L’historique n’affiche que les demandes de cet artisan.
-   L’utilisateur doit se reconnecter pour que le changement soit pris en compte.
+3. **Authentication → Sign In / Providers** : désactiver « Allow new users to sign up ».
+4. **Authentication → URL Configuration** : *Site URL* = l’URL Vercel ; ajouter `http://localhost:3000/**` et
+   `https://<votre-domaine>/**` aux *Redirect URLs*.
+5. Rattacher le gérant d’une nouvelle entreprise :
+   ```sql
+   insert into public.membres (user_id, artisan_id, role)
+   select id, 'ART-XXX', 'gerant' from auth.users where email = 'gerant@exemple.fr';
+   ```
+   Les comptes des techniciens se créent ensuite depuis la page Techniciens.
 
 ## Déploiement sur Vercel
 
-1. Importez le dépôt sur Vercel, **Root Directory = `web`** (framework détecté : Next.js).
-2. Renseignez les variables de `.env.example` dans *Settings → Environment Variables*
-   (`AGENT_MOCK=0`, ne définissez pas `AUTH_DEV_BYPASS`).
-3. Région des fonctions : Paris (`cdg1`), proche de n8n et de Supabase (eu-west-3).
-4. La route `/api/agent/demandes` déclare `maxDuration = 70` : vérifiez que votre offre Vercel autorise des
-   fonctions d’au moins 70 secondes.
+1. Root Directory = `web`, région `cdg1` (Paris).
+2. Variables de `.env.example` dans *Settings → Environment Variables*, dont **`APP_CLE_SERVEUR`** (sans elle, les devis
+   signés ne sont pas planifiés automatiquement : ils apparaissent « À planifier »). `AGENT_MOCK=0`, pas d’`AUTH_DEV_BYPASS`.
+3. Les routes d’agent déclarent `maxDuration` 70 à 120 s : l’offre Vercel doit l’autoriser.
 
 ## Limites connues
 
-- **Limite d’appels en mémoire** : comptée par instance de serveur. Sur Vercel (plusieurs instances), utiliser
-  Upstash Redis ou une table Postgres.
-- **PDF** : le workflow ne renvoie que le nom du fichier (le PDF est joint à l’email) ; l’application ne peut pas
-  encore le proposer au téléchargement.
-- **Délai dépassé** : si n8n met plus de 60 s, l’application affiche une erreur, mais le workflow peut aller au bout
-  et enregistrer la demande. Vérifier l’historique avant de relancer.
+- **SMS** : le champ `canal` existe (`email`/`sms`) mais seul l’email est envoyé aujourd’hui.
+- **Limite d’appels en mémoire** : comptée par instance de serveur (prévoir Redis ou Postgres sur Vercel).
+- **PDF** : joint à l’email par n8n, pas encore téléchargeable depuis l’application.
+- **Délai dépassé** : si n8n met plus de 60 s, l’application affiche une erreur alors que l’email a pu partir ;
+  la fiche permet de relancer (même numéro de devis ou de facture).

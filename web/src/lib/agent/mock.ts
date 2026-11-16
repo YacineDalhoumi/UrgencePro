@@ -132,6 +132,8 @@ export async function appelerAgentSimule(p: PayloadN8n): Promise<ResultatAppel> 
   if (p.message.includes("#404")) return { ok: false, code: "webhook_introuvable", httpStatus: 404, message: "Webhook introuvable : workflow désactivé ou URL incorrecte (simulation).", dureeMs };
   if (p.message.includes("#500")) return { ok: false, code: "erreur_workflow", httpStatus: 500, message: "Le workflow a échoué (HTTP 500) (simulation).", dureeMs };
 
+  // Le lien de signature n'est jamais stocké : en simulation, il est écrit dans le journal du serveur (tests)
+  if (p.lien_signature) console.log(`[simulation] lien de signature ${p.numero_devis} : ${p.lien_signature}`);
   const type = p.type_demande ?? classer(p.message);
   const reference = `DEM-${Date.now()}`;
   const invalide = p.message.includes("#json");
